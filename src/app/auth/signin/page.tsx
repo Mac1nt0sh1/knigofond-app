@@ -46,20 +46,43 @@ export default function SignInPage() {
         })
 
         if (result?.error) {
-          setError(result.error)
-        } else {
+          // Обработка различных типов ошибок
+          if (result.error === "CredentialsSignin") {
+            setError("Неверный email или пароль")
+          } else {
+            setError(result.error === "Configuration" 
+              ? "Ошибка конфигурации сервера. Обратитесь к администратору."
+              : result.error || "Ошибка при входе. Попробуйте снова.")
+          }
+        } else if (result?.ok) {
           router.push("/")
           router.refresh()
+        } else {
+          setError("Неверный email или пароль")
         }
       } else {
         // Register
-        const response = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData)
-        })
+        let response
+        try {
+          response = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData)
+          })
+        } catch (fetchError) {
+          console.error("Fetch error:", fetchError)
+          setError("Ошибка сети. Проверьте подключение к интернету.")
+          return
+        }
 
-        const data = await response.json()
+        let data
+        try {
+          data = await response.json()
+        } catch (jsonError) {
+          console.error("JSON parse error:", jsonError)
+          setError("Ошибка при обработке ответа сервера.")
+          return
+        }
 
         if (!response.ok) {
           setError(data.error || "Ошибка регистрации")
@@ -72,14 +95,19 @@ export default function SignInPage() {
           })
 
           if (result?.error) {
-            setError(result.error)
-          } else {
+            setError(result.error === "CredentialsSignin"
+              ? "Ошибка при автоматическом входе. Попробуйте войти вручную."
+              : result.error || "Ошибка при входе")
+          } else if (result?.ok) {
             router.push("/")
             router.refresh()
+          } else {
+            setError("Ошибка при автоматическом входе. Попробуйте войти вручную.")
           }
         }
       }
-    } catch {
+    } catch (error) {
+      console.error("Auth error:", error)
       setError("Произошла ошибка. Попробуйте снова.")
     } finally {
       setIsLoading(false)
