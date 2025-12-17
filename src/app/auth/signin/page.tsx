@@ -7,6 +7,9 @@ import Link from "next/link"
 import { BookOpen, Mail, Lock, User, ArrowLeft, Moon, Sun } from "lucide-react"
 import { useTheme } from "@/components/providers/ThemeProvider"
 
+// Force dynamic rendering since this page uses authentication
+export const dynamic = 'force-dynamic'
+
 export default function SignInPage() {
   const { theme, toggleTheme } = useTheme()
   const router = useRouter()
